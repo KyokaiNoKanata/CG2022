@@ -25,24 +25,68 @@ def draw_line(p_list, algorithm):
             for x in range(x0, x1 + 1):
                 result.append((x, int(y0 + k * (x - x0))))
     elif algorithm == 'DDA':
-        if x1 != x0 and abs((y1 - y0) / (x1 - x0)) <= 1:
-            m = (y1 - y0) / (x1 - x0)
-            y = y0
-            delta_x = 1 if x0 <= x1 else -1
-            for x in range(x0, x1 + delta_x, delta_x):
-                result.append((int(x), int(y)))
-                y += delta_x * m
-        elif y1 != y0:
-            m = (x1 - x0) / (y1 - y0)
-            x = x0
-            delta_y = 1 if y0 <= y1 else -1
-            for y in range(y0, y1 + delta_y, delta_y):
-                result.append((int(x), int(y)))
-                x += delta_y * m
+        if x0 == x1:
+            if y0 > y1:
+                y0, y1 = y1, y0
+            for y in range(y0, y1):
+                result.append((int(x0), int(y)))
         else:
-            result.append((x0, y0))
+            m = (y1 - y0) / (x1 - x0)
+            if abs(m) <= 1:
+                if x0 > x1:
+                    x0, y0, x1, y1 = x1, y1, x0, y0
+                y = y0
+                for x in range(x0, x1):
+                    result.append((int(x), int(y)))
+                    y += m
+            else:
+                if y0 > y1:
+                    x0, y0, x1, y1 = x1, y1, x0, y0
+                x = x0
+                for y in range(y0, y1):
+                    result.append((int(x), int(y)))
+                    x += 1 / m
     elif algorithm == 'Bresenham':
-        pass
+        if x0 == x1:
+            if y0 > y1:
+                y0, y1 = y1, y0
+            for y in range(y0, y1):
+                result.append((int(x0), int(y)))
+        elif y0 == y1:
+            if x0 > x1:
+                x0, x1 = x1, x0
+            for x in range(x0, x1):
+                result.append((int(x), int(y0)))
+        else:
+            m = (y1 - y0) / (x1 - x0)
+            inc = 1 if m > 0 else -1
+            if abs(m) <= 1:
+                if x0 > x1:
+                    x0, y0, x1, y1 = x1, y1, x0, y0
+                delta_x, delta_y = x1 - x0, y1 - y0
+                p = 2 * delta_y - delta_x
+                y = y0
+                for x in range(x0, x1):
+                    result.append((int(x), int(y)))
+                    if p * inc >= 0:
+                        p = p + 2 * delta_y - 2 * inc * delta_x
+                        y = y + inc
+                    else:
+                        p = p + 2 * delta_y
+            else:
+                if y0 > y1:
+                    x0, y0, x1, y1 = x1, y1, x0, y0
+                x0, y0, x1, y1 = y0, x0, y1, x1
+                delta_x, delta_y = x1 - x0, y1 - y0
+                p = 2 * delta_y - delta_x
+                y = y0
+                for x in range(x0, x1):
+                    result.append((int(y), int(x)))
+                    if p * inc >= 0:
+                        p = p + 2 * delta_y - 2 * inc * delta_x
+                        y = y + inc
+                    else:
+                        p = p + 2 * delta_y
     return result
 
 
@@ -66,7 +110,40 @@ def draw_ellipse(p_list):
     :param p_list: (list of list of int: [[x0, y0], [x1, y1]]) 椭圆的矩形包围框左上角和右下角顶点坐标
     :return: (list of list of int: [[x_0, y_0], [x_1, y_1], [x_2, y_2], ...]) 绘制结果的像素点坐标列表
     """
-    pass
+    x0, y0 = p_list[0]
+    x1, y1 = p_list[1]
+    result = []
+    rx = abs(x1 - x0) / 2
+    ry = abs(y1 - y0) / 2
+    xc = (x0 + x1) / 2
+    yc = (y0 + y1) / 2
+    p1 = pow(ry, 2) - pow(rx, 2) * ry + pow(rx, 2) / 4
+    x, y = 0, ry
+    result.append((int(x), int(y)))
+    while pow(ry, 2) * x < pow(rx, 2) * y:
+        if p1 < 0:
+            x, y = x + 1, y
+            p1 = p1 + 2 * pow(ry, 2) * x + pow(ry, 2)
+        else:
+            x, y = x + 1, y - 1
+            p1 = p1 + 2 * pow(ry, 2) * x - 2 * pow(rx, 2) * y + pow(ry, 2)
+        result.append((int(x), int(y)))
+        result.append((int(-x), int(y)))
+        result.append((int(x), int(-y)))
+        result.append((int(-x), int(-y)))
+    p2 = pow(ry, 2) * pow(x + 1 / 2, 2) + pow(rx, 2) * pow(y - 1, 2) - pow(rx, 2) * pow(ry, 2)
+    while y >= 0:
+        if p2 > 0:
+            x, y = x, y - 1
+            p2 = p2 - 2 * pow(rx, 2) * y + pow(rx, 2)
+        else:
+            x, y = x + 1, y - 1
+            p2 = p2 + 2 * pow(ry, 2) * x - 2 * pow(rx, 2) * y + pow(rx, 2)
+        result.append((int(x), int(y)))
+        result.append((int(-x), int(y)))
+        result.append((int(x), int(-y)))
+        result.append((int(-x), int(-y)))
+    return translate(result, xc, yc)
 
 
 def draw_curve(p_list, algorithm):
@@ -87,7 +164,10 @@ def translate(p_list, dx, dy):
     :param dy: (int) 垂直方向平移量
     :return: (list of list of int: [[x_0, y_0], [x_1, y_1], [x_2, y_2], ...]) 变换后的图元参数
     """
-    pass
+    result = []
+    for point in p_list:
+        result.append((int(point[0] + dx), int(point[1] + dy)))
+    return result
 
 
 def rotate(p_list, x, y, r):
