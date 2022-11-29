@@ -164,10 +164,7 @@ def translate(p_list, dx, dy):
     :param dy: (int) 垂直方向平移量
     :return: (list of list of int: [[x_0, y_0], [x_1, y_1], [x_2, y_2], ...]) 变换后的图元参数
     """
-    result = []
-    for point in p_list:
-        result.append((int(point[0] + dx), int(point[1] + dy)))
-    return result
+    return [[int(p[0] + dx), int(p[1] + dy)] for p in p_list]
 
 
 def rotate(p_list, x, y, r):
