@@ -2,7 +2,6 @@
 # -*- coding:utf-8 -*-
 
 # 本文件只允许依赖math库
-import math
 
 
 def draw_line(p_list, algorithm):
@@ -26,7 +25,22 @@ def draw_line(p_list, algorithm):
             for x in range(x0, x1 + 1):
                 result.append((x, int(y0 + k * (x - x0))))
     elif algorithm == 'DDA':
-        pass
+        if x1 != x0 and abs((y1 - y0) / (x1 - x0)) <= 1:
+            m = (y1 - y0) / (x1 - x0)
+            y = y0
+            delta_x = 1 if x0 <= x1 else -1
+            for x in range(x0, x1 + delta_x, delta_x):
+                result.append((int(x), int(y)))
+                y += delta_x * m
+        elif y1 != y0:
+            m = (x1 - x0) / (y1 - y0)
+            x = x0
+            delta_y = 1 if y0 <= y1 else -1
+            for y in range(y0, y1 + delta_y, delta_y):
+                result.append((int(x), int(y)))
+                x += delta_y * m
+        else:
+            result.append((x0, y0))
     elif algorithm == 'Bresenham':
         pass
     return result
