@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 -*-
+import math
+
 
 # 本文件只允许依赖math库
 
@@ -176,7 +178,9 @@ def rotate(p_list, x, y, r):
     :param r: (int) 顺时针旋转角度（°）
     :return: (list of list of int: [[x_0, y_0], [x_1, y_1], [x_2, y_2], ...]) 变换后的图元参数
     """
-    pass
+    r = math.radians(r)
+    return [[int(x + (x0 - x) * math.cos(r) - (y0 - y) * math.sin(r)),
+             int(y + (x0 - x) * math.sin(r) + (y0 - y) * math.cos(r))] for [x0, y0] in p_list]
 
 
 def scale(p_list, x, y, s):
@@ -188,7 +192,7 @@ def scale(p_list, x, y, s):
     :param s: (float) 缩放倍数
     :return: (list of list of int: [[x_0, y_0], [x_1, y_1], [x_2, y_2], ...]) 变换后的图元参数
     """
-    pass
+    return [[int(x0 * s + x * (1 - s)), int(y0 * s + y * (1 - s))] for [x0, y0] in p_list]
 
 
 def clip(p_list, x_min, y_min, x_max, y_max, algorithm):

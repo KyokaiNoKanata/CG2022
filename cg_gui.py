@@ -42,10 +42,18 @@ class MyCanvas(QGraphicsView):
         self.status = 'line'
         self.temp_algorithm = algorithm
         self.temp_id = item_id
+        self.temp_item = None
+
+    def start_draw_polygon(self, algorithm, item_id):
+        self.status = 'polygon'
+        self.temp_algorithm = algorithm
+        self.temp_id = item_id
+        self.temp_item = None
 
     def start_draw_ellipse(self, item_id):
         self.status = 'ellipse'
         self.temp_id = item_id
+        self.temp_item = None
 
     def finish_draw(self):
         self.temp_id = self.main_window.get_id()
@@ -138,7 +146,7 @@ class MyItem(QGraphicsItem):
             pass
 
     def boundingRect(self) -> QRectF:
-        if self.item_type == 'line':
+        if self.item_type == 'line' or self.item_type == 'ellipse':
             x0, y0 = self.p_list[0]
             x1, y1 = self.p_list[1]
             x = min(x0, x1)
@@ -148,14 +156,6 @@ class MyItem(QGraphicsItem):
             return QRectF(x - 1, y - 1, w + 2, h + 2)
         elif self.item_type == 'polygon':
             pass
-        elif self.item_type == 'ellipse':
-            x0, y0 = self.p_list[0]
-            x1, y1 = self.p_list[1]
-            x = min(x0, x1)
-            y = min(y0, y1)
-            w = max(x0, x1) - x
-            h = max(y0, y1) - y
-            return QRectF(x - 1, y - 1, w + 2, h + 2)
         elif self.item_type == 'curve':
             pass
 
@@ -246,6 +246,12 @@ class MainWindow(QMainWindow):
     def line_bresenham_action(self):
         self.canvas_widget.start_draw_line('Bresenham', self.get_id())
         self.statusBar().showMessage('Bresenham算法绘制线段')
+        self.list_widget.clearSelection()
+        self.canvas_widget.clear_selection()
+
+    def polygon_action(self):
+        self.canvas_widget.start_draw_ellipse(self.get_id())
+        self.statusBar().showMessage('绘制多边形')
         self.list_widget.clearSelection()
         self.canvas_widget.clear_selection()
 
