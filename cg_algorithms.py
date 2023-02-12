@@ -155,7 +155,12 @@ def draw_curve(p_list, algorithm):
     :param algorithm: (string) 绘制使用的算法，包括'Bezier'和'B-spline'（三次均匀B样条曲线，曲线不必经过首末控制点）
     :return: (list of list of int: [[x_0, y_0], [x_1, y_1], [x_2, y_2], ...]) 绘制结果的像素点坐标列表
     """
-    pass
+    result = []
+    if algorithm == 'Bezier':
+        ...
+    elif algorithm == 'B-spline':
+        ...
+    return result
 
 
 def translate(p_list, dx, dy):
@@ -195,6 +200,19 @@ def scale(p_list, x, y, s):
     return [[int(x0 * s + x * (1 - s)), int(y0 * s + y * (1 - s))] for [x0, y0] in p_list]
 
 
+def area_code(x_min, y_min, x_max, y_max, x, y):
+    res = 0b0
+    if x < x_min:
+        res |= 0b0001
+    if x > x_max:
+        res |= 0b0010
+    if y < y_min:
+        res |= 0b0100
+    if y > y_max:
+        res |= 0b1000
+    return res
+
+
 def clip(p_list, x_min, y_min, x_max, y_max, algorithm):
     """线段裁剪
 
@@ -206,4 +224,39 @@ def clip(p_list, x_min, y_min, x_max, y_max, algorithm):
     :param algorithm: (string) 使用的裁剪算法，包括'Cohen-Sutherland'和'Liang-Barsky'
     :return: (list of list of int: [[x_0, y_0], [x_1, y_1]]) 裁剪后线段的起点和终点坐标
     """
-    pass
+    if x_min > x_max:
+        x_min, x_max = x_max, x_min
+    if y_min > y_max:
+        y_min, y_max = y_max, y_min
+    if algorithm == 'Cohen-Sutherland':
+        (x0, y0), (x1, y1) = p_list[0], p_list[1]
+        code0 = area_code(x_min, y_min, x_max, y_max, x0, y0)
+        code1 = area_code(x_min, y_min, x_max, y_max, x1, y1)
+        if code0 == 0 and code1 == 0:
+            return p_list
+        elif code0 & code1 != 0:
+            return []
+        else:
+            if code0 == 0b0000:
+                x0, y0, x1, y1 = x1, y1, x0, y0
+                code0, code1 = code1, code0
+            while code0 != 0b0000:
+                if code0 & 0b1000 != 0:
+                    x0 = round((y_max - y0) * (x1 - x0) / (y1 - y0) + x0)
+                    y0 = y_max
+                elif code0 & 0b0100 != 0:
+                    x0 = round((y_min - y0) * (x1 - x0) / (y1 - y0) + x0)
+                    y0 = y_min
+                elif code0 & 0b0010 != 0:
+                    y0 = round((x_max - x0) * (y1 - y0) / (x1 - x0) + y0)
+                    x0 = x_max
+                elif code0 & 0b0001 != 0:
+                    y0 = round((x_min - x0) * (y1 - y0) / (x1 - x0) + y0)
+                    x0 = x_min
+                code0 = 0b0000
+                x0, y0, x1, y1 = x1, y1, x0, y0
+                code0, code1 = code1, code0
+            return [[int(x0), int(y0)], [int(x1), int(y1)]]
+    elif algorithm == 'Liang-Barsky':
+        ...
+    return p_list
