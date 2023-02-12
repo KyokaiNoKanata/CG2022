@@ -4,7 +4,7 @@
 import sys
 from typing import Optional
 
-from PyQt5.QtCore import QRectF
+from PyQt5.QtCore import QRectF, Qt
 from PyQt5.QtGui import QPainter, QMouseEvent, QColor
 from PyQt5.QtWidgets import (
     QApplication,
@@ -55,6 +55,12 @@ class MyCanvas(QGraphicsView):
         self.temp_id = item_id
         self.temp_item = None
 
+    def start_draw_curve(self, algorithm, item_id):
+        self.status = 'curve'
+        self.temp_algorithm = algorithm
+        self.temp_id = item_id
+        self.temp_item = None
+
     def finish_draw(self):
         self.temp_id = self.main_window.get_id()
 
@@ -84,6 +90,17 @@ class MyCanvas(QGraphicsView):
         elif self.status == 'ellipse':
             self.temp_item = MyItem(self.temp_id, self.status, [[x, y], [x, y]])
             self.scene().addItem(self.temp_item)
+        elif self.status == 'curve' or self.status == 'polygon':
+            if self.temp_item is None:
+                self.temp_item = MyItem(self.temp_id, self.status, [[x, y], [x, y]], self.temp_algorithm)
+                self.scene().addItem(self.temp_item)
+            elif event.button() == Qt.LeftButton:
+                self.temp_item.p_list.append([x, y])
+            else:
+                self.item_dict[self.temp_id] = self.temp_item
+                self.list_widget.addItem(self.temp_id)
+                self.finish_draw()
+
         self.updateScene([self.sceneRect()])
         super().mousePressEvent(event)
 
@@ -91,8 +108,10 @@ class MyCanvas(QGraphicsView):
         pos = self.mapToScene(event.localPos().toPoint())
         x = int(pos.x())
         y = int(pos.y())
-        if self.status == 'line' or 'ellipse':
+        if self.status == 'line' or self.status == 'ellipse':
             self.temp_item.p_list[1] = [x, y]
+        elif self.status == 'curve' or self.status == 'polygon':
+            self.temp_item.p_list[-1] = [x, y]
         self.updateScene([self.sceneRect()])
         super().mouseMoveEvent(event)
 
@@ -134,6 +153,12 @@ class MyItem(QGraphicsItem):
                 painter.setPen(QColor(255, 0, 0))
                 painter.drawRect(self.boundingRect())
         elif self.item_type == 'polygon':
+            item_pixels = alg.draw_polygon(self.p_list, self.algorithm)
+            for p in item_pixels:
+                painter.drawPoint(*p)
+            if self.selected:
+                painter.setPen(QColor(255, 0, 0))
+                painter.drawRect(self.boundingRect())
             pass
         elif self.item_type == 'ellipse':
             item_pixels = alg.draw_ellipse(self.p_list)
@@ -143,7 +168,12 @@ class MyItem(QGraphicsItem):
                 painter.setPen(QColor(255, 0, 0))
                 painter.drawRect(self.boundingRect())
         elif self.item_type == 'curve':
-            pass
+            item_pixels = alg.draw_curve(self.p_list, self.algorithm)
+            for p in item_pixels:
+                painter.drawPoint(*p)
+            if self.selected:
+                painter.setPen(QColor(255, 0, 0))
+                painter.drawRect(self.boundingRect())
 
     def boundingRect(self) -> QRectF:
         if self.item_type == 'line' or self.item_type == 'ellipse':
@@ -155,9 +185,29 @@ class MyItem(QGraphicsItem):
             h = max(y0, y1) - y
             return QRectF(x - 1, y - 1, w + 2, h + 2)
         elif self.item_type == 'polygon':
-            pass
+            x, y = self.p_list[0]
+            x0, y0, x1, y1 = x, y, x, y
+            for p in self.p_list:
+                x, y = p
+                x0 = min(x, x0)
+                y0 = min(y, y0)
+                x1 = max(x, x1)
+                y1 = max(y, y1)
+            w = max(x0, x1) - x0
+            h = max(y0, y1) - y0
+            return QRectF(x0 - 1, y0 - 1, w + 2, h + 2)
         elif self.item_type == 'curve':
-            pass
+            x, y = self.p_list[0]
+            x0, y0, x1, y1 = x, y, x, y
+            for p in self.p_list:
+                x, y = p
+                x0 = min(x, x0)
+                y0 = min(y, y0)
+                x1 = max(x, x1)
+                y1 = max(y, y1)
+            w = max(x0, x1) - x0
+            h = max(y0, y1) - y0
+            return QRectF(x0 - 1, y0 - 1, w + 2, h + 2)
 
 
 class MainWindow(QMainWindow):
@@ -213,6 +263,10 @@ class MainWindow(QMainWindow):
         line_dda_act.triggered.connect(self.line_dda_action)
         line_bresenham_act.triggered.connect(self.line_bresenham_action)
         ellipse_act.triggered.connect(self.ellipse_action)
+        curve_bezier_act.triggered.connect(self.curve_bezier_action)
+        curve_b_spline_act.triggered.connect(self.curve_b_spline_action)
+        polygon_dda_act.triggered.connect(self.polygon_dda_action)
+        polygon_bresenham_act.triggered.connect(self.polygon_bresenham_action)
         self.list_widget.currentTextChanged.connect(self.canvas_widget.selection_changed)
 
         # 设置主窗口的布局
@@ -249,15 +303,33 @@ class MainWindow(QMainWindow):
         self.list_widget.clearSelection()
         self.canvas_widget.clear_selection()
 
-    def polygon_action(self):
-        self.canvas_widget.start_draw_ellipse(self.get_id())
-        self.statusBar().showMessage('绘制多边形')
+    def polygon_dda_action(self):
+        self.canvas_widget.start_draw_polygon('DDA', self.get_id())
+        self.statusBar().showMessage('DDA算法绘制多边形')
+        self.list_widget.clearSelection()
+        self.canvas_widget.clear_selection()
+
+    def polygon_bresenham_action(self):
+        self.canvas_widget.start_draw_polygon('Bresenham', self.get_id())
+        self.statusBar().showMessage('Bresenham算法绘制多边形')
         self.list_widget.clearSelection()
         self.canvas_widget.clear_selection()
 
     def ellipse_action(self):
         self.canvas_widget.start_draw_ellipse(self.get_id())
         self.statusBar().showMessage('绘制椭圆')
+        self.list_widget.clearSelection()
+        self.canvas_widget.clear_selection()
+
+    def curve_bezier_action(self):
+        self.canvas_widget.start_draw_curve('Bezier', self.get_id())
+        self.statusBar().showMessage('绘制曲线')
+        self.list_widget.clearSelection()
+        self.canvas_widget.clear_selection()
+
+    def curve_b_spline_action(self):
+        self.canvas_widget.start_draw_curve('B-spline', self.get_id())
+        self.statusBar().showMessage('绘制曲线')
         self.list_widget.clearSelection()
         self.canvas_widget.clear_selection()
 

@@ -157,9 +157,33 @@ def draw_curve(p_list, algorithm):
     """
     result = []
     if algorithm == 'Bezier':
-        ...
+        n = len(p_list) - 1
+        m = n * 1000
+        for i in range(m):
+            u = float(i / m)
+            control_point = p_list.copy()
+            for k in range(n):
+                temp = []
+                for j in range(len(control_point) - 1):
+                    x0, y0 = control_point[j]
+                    x1, y1 = control_point[j + 1]
+                    temp.append([(1 - u) * x0 + u * x1, (1 - u) * y0 + u * y1])
+                control_point = temp.copy()
+            result.append([round(control_point[0][0]), round(control_point[0][1])])
     elif algorithm == 'B-spline':
-        ...
+        n = len(p_list) - 1
+        m = n * 1000
+        for i in range(m):
+            u = float(i / m)
+            control_point = p_list.copy()
+            for k in range(n):
+                temp = []
+                for j in range(len(control_point) - 1):
+                    x0, y0 = control_point[j]
+                    x1, y1 = control_point[j + 1]
+                    temp.append([(1 - u) * x0 + u * x1, (1 - u) * y0 + u * y1])
+                control_point = temp.copy()
+            result.append([round(control_point[0][0]), round(control_point[0][1])])
     return result
 
 

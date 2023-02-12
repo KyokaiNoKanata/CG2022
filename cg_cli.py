@@ -35,19 +35,19 @@ if __name__ == '__main__':
                     if item_type == 'line':
                         pixels = alg.draw_line(p_list, algorithm)
                         for x, y in pixels:
-                            canvas[height - 1 - y, x] = color
+                            canvas[y, x] = color
                     elif item_type == 'polygon':
                         pixels = alg.draw_polygon(p_list, algorithm)
                         for x, y in pixels:
-                            canvas[height - 1 - y, x] = color
+                            canvas[y, x] = color
                     elif item_type == 'ellipse':
                         pixels = alg.draw_ellipse(p_list)
                         for x, y in pixels:
-                            canvas[height - 1 - y, x] = color
+                            canvas[y, x] = color
                     elif item_type == 'curve':
                         pixels = alg.draw_curve(p_list, algorithm)
                         for x, y in pixels:
-                            canvas[height - 1 - y, x] = color
+                            canvas[y, x] = color
                 Image.fromarray(canvas).save(os.path.join(output_dir, save_name + '.bmp'), 'bmp')
             elif line[0] == 'setColor':
                 pen_color[0] = int(line[1])
@@ -75,6 +75,15 @@ if __name__ == '__main__':
                 x1 = int(line[4])
                 y1 = int(line[5])
                 item_dict[item_id] = ['ellipse', [[x0, y0], [x1, y1]], None, np.array(pen_color)]
+            elif line[0] == 'drawCurve':
+                item_id = line[1]
+                p_list = []
+                for i in range(2, len(line) - 1, 2):
+                    x = int(line[i])
+                    y = int(line[i + 1])
+                    p_list.append([x, y])
+                algorithm = line[-1]
+                item_dict[item_id] = ['curve', p_list, algorithm, np.array(pen_color)]
             elif line[0] == 'translate':
                 item_id = line[1]
                 dx = int(line[2])
