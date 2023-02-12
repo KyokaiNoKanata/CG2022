@@ -224,12 +224,12 @@ def clip(p_list, x_min, y_min, x_max, y_max, algorithm):
     :param algorithm: (string) 使用的裁剪算法，包括'Cohen-Sutherland'和'Liang-Barsky'
     :return: (list of list of int: [[x_0, y_0], [x_1, y_1]]) 裁剪后线段的起点和终点坐标
     """
+    (x0, y0), (x1, y1) = p_list[0], p_list[1]
     if x_min > x_max:
         x_min, x_max = x_max, x_min
     if y_min > y_max:
         y_min, y_max = y_max, y_min
     if algorithm == 'Cohen-Sutherland':
-        (x0, y0), (x1, y1) = p_list[0], p_list[1]
         code0 = area_code(x_min, y_min, x_max, y_max, x0, y0)
         code1 = area_code(x_min, y_min, x_max, y_max, x1, y1)
         if code0 == 0 and code1 == 0:
@@ -258,5 +258,23 @@ def clip(p_list, x_min, y_min, x_max, y_max, algorithm):
                 code0, code1 = code1, code0
             return [[int(x0), int(y0)], [int(x1), int(y1)]]
     elif algorithm == 'Liang-Barsky':
-        ...
+        dx, dy = x1 - x0, y1 - y0
+        p = [-dx, dx, -dy, dy]
+        q = [x0 - x_min, x_max - x0, y0 - y_min, y_max - y0]
+        u1 = float(0)
+        u2 = float(1)
+        for i in range(0, 4):
+            if p[i] == 0 and q[i] < 0:
+                return []
+            if p[i] == 0:
+                continue
+            r = q[i] / p[i]
+            if p[i] < 0:
+                u1 = max(u1, r)
+            else:
+                u2 = min(u2, r)
+            if u1 > u2:
+                return []
+        return [[round(x0 + u1 * (x1 - x0)), round(y0 + u1 * (y1 - y0))],
+                [round(x0 + u2 * (x1 - x0)), round(y0 + u2 * (y1 - y0))]]
     return p_list
